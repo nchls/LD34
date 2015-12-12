@@ -4,24 +4,30 @@ window.states.gameState = (function() {
 	function gameState() {};
 
 	gameState.prototype.preload = function() {
+		game.stage.backgroundColor = '#000';
 		_.forEach(globals.assets.graphs, function(src, name) {
 			game.load.image(name, src);
 		});
 	};
 
 	gameState.prototype.create = function() {
-		// initialize game
-		_.forEach(globals.controls, function(key, action) {
-			window.state.controls[action] = game.input.keyboard.addKey(Phaser.Keyboard[key]);
+		initControls();
+		initWorld();
+		initPhysics();
+		populate();
+
+		/*
+		var sprites = [];
+		_.forEach(state.processRegistry, function(processes) {
+			sprites = sprites.concat(_.pluck(processes, 'sprite'));
 		});
+		game.physics.p2.enable(sprites, false);
 
-		gameState.arenaWidth = 5000;
-		gameState.arenaHeight = 5000;
+		_.forEach(sprites, function(sprite) {
+			sprite.body.setCircle(40);
+		});
+		*/
 
-		util.factory(Ship);
-		for (var i=0; i < 50; i++) {
-			util.factory(Scrap);
-		}
 	};
 
 	gameState.prototype.update = function() {
@@ -34,46 +40,60 @@ window.states.gameState = (function() {
 		});
 	};
 
+	var initControls = function() {
+		_.forEach(globals.controls, function(key, action) {
+			window.state.controls[action] = game.input.keyboard.addKey(Phaser.Keyboard[key]);
+		});
+	};
+
+	var initWorld = function() {
+		game.world.resize(5000, 5000);
+		game.add.tileSprite(0, 0, 5000, 5000, 'starfield');
+	};
+
+	var initPhysics = function() {
+		window.game.physics.startSystem(Phaser.Physics.P2JS);
+		game.physics.p2.restitution = 0.5;
+	};
+
+	var populate = function() {
+		util.factory(Ship);
+		for (var i=0; i < 100; i++) {
+			util.factory(Scrap);
+		}
+	};
+
 	var Ship = (function() {
 		util.extend(Ship, util.prototypes.SpaceObj);
 
 		function Ship() {
 			this.x = globals.screenWidth / 2;
 			this.y = globals.screenHeight / 2;
-			this.xspeed = 0;
-			this.yspeed = 0;
 			this.sprite = game.add.sprite(this.x, this.y, 'ship');
 			this.sprite.anchor.set(0.5, 0.5);
-			this.sprite.angle = 0;
-			this.sprite.angle = 180;
-			this.addAngle = 0;
+			game.physics.p2.enable(this.sprite, false);
+			this.sprite.body.setCircle(25);
+			this.sprite.body.angularDamping = 0.999;
+			this.sprite.body.damping = 0;
+
+			game.camera.follow(this.sprite);
 
 			window.ship = this;
 
-			game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
 		}
 
 		Ship.prototype.go = function() {
-			this.addAngle *= 0.83;
 
 			if (window.state.controls.left.isDown) {
-				this.addAngle--;
+				this.sprite.body.angularVelocity -= 1;
 			}
 			if (window.state.controls.right.isDown) {
-				this.addAngle++;
+				this.sprite.body.angularVelocity += 1;
 			}
 			if (window.state.controls.thrust.isDown) {
-				this.xspeed += util.getDistX(util.angleToRad(this.sprite.angle)) * 0.2;
-				this.yspeed += util.getDistY(util.angleToRad(this.sprite.angle)) * 0.2;
-			}
-			if (window.state.controls.fire.isDown) {
-
+				this.sprite.body.thrust(500);
 			}
 
-			this.sprite.x += this.xspeed;
-			this.sprite.y += this.yspeed;
-			this.sprite.angle += this.addAngle;
-			//Ship.__super__.tick.call(this);
 		};
 
 		return Ship;
@@ -83,16 +103,19 @@ window.states.gameState = (function() {
 		util.extend(Scrap, util.prototypes.SpaceObj);
 
 		function Scrap(x, y) {
-			this.x = x || util.rand(0, gameState.arenaWidth);
-			this.y = y || util.rand(0, gameState.arenaHeight);
-			this.xspeed = util.rand(-1, 1, true);
-			this.yspeed = util.rand(-1, 1, true);
+			this.x = x || util.rand(0, game.world.width);
+			this.y = y || util.rand(0, game.world.height);
 			this.sprite = game.add.sprite(this.x, this.y, 'scrap');
 			this.sprite.anchor.set(0.5, 0.5);
-			this.sprite.angle = util.rand(-180, 180, true);
-			this.addAngle = util.rand(-2, 2, true);
 
-			game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
+			game.physics.p2.enable(this.sprite, false);
+			this.sprite.body.angle = util.rand(0, 360, true);
+			this.sprite.body.thrust(util.rand(0, 5000, true));
+			this.sprite.body.angle = util.rand(0, 360, true);
+			this.sprite.body.angularVelocity = util.rand(-3, 3, true);
+			this.sprite.body.setCircle(25);
+			this.sprite.body.angularDamping = 0;
+			this.sprite.body.damping = 0;
 		}
 
 		Scrap.prototype.go = function() {

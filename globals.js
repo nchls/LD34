@@ -5,15 +5,18 @@ window.globals = {
 	assets: {
 		graphs: {
 			ship: 'assets/ship.png',
-			scrap: 'assets/scrap1.png'
+			scrap: 'assets/scrap1.png',
+			starfield: 'assets/starfield.png',
+			engine: 'assets/engine.png',
+			gun: 'assets/gun.png'
 		},
 	},
 
 	fonts: {
 		main: {
-			font: '20px Arial',
+			font: '16px Consolas, monospace',
 			fill: '#fff',
-			align: 'center'
+			align: 'left'
 		}
 	},
 
