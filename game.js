@@ -8,6 +8,7 @@ window.states.gameState = (function() {
 		_.forEach(globals.assets.graphs, function(src, name) {
 			game.load.image(name, src);
 		});
+		game.time.advancedTiming = true;
 	};
 
 	gameState.prototype.create = function() {
@@ -15,19 +16,6 @@ window.states.gameState = (function() {
 		initWorld();
 		initPhysics();
 		populate();
-
-		/*
-		var sprites = [];
-		_.forEach(state.processRegistry, function(processes) {
-			sprites = sprites.concat(_.pluck(processes, 'sprite'));
-		});
-		game.physics.p2.enable(sprites, false);
-
-		_.forEach(sprites, function(sprite) {
-			sprite.body.setCircle(40);
-		});
-		*/
-
 	};
 
 	gameState.prototype.update = function() {
@@ -38,6 +26,10 @@ window.states.gameState = (function() {
 				}
 			});
 		});
+	};
+
+	gameState.prototype.render = function() {
+		game.debug.text(game.time.fps || '-', 2, 14, '#fff');
 	};
 
 	var initControls = function() {
@@ -76,23 +68,55 @@ window.states.gameState = (function() {
 			this.sprite.body.angularDamping = 0.999;
 			this.sprite.body.damping = 0;
 
+/*
+			this.sprite.body.onBeginContact.add(function(body1, body2, shape1, shape2, equation) {
+				var shipBody = this.sprite.body;
+				if (body1 !== null && body2 !== null) {
+					// body2.fixedRotation = true;
+					var constraint = game.physics.p2.createLockConstraint(shipBody, body2, [100, 0], 0);
+				}
+			}, this);
+*/
+
 			game.camera.follow(this.sprite);
 
 			window.ship = this;
-
 		}
 
 		Ship.prototype.go = function() {
-
 			if (window.state.controls.left.isDown) {
-				this.sprite.body.angularVelocity -= 1;
+				this.sprite.body.angularVelocity -= 0.8;
 			}
 			if (window.state.controls.right.isDown) {
-				this.sprite.body.angularVelocity += 1;
+				this.sprite.body.angularVelocity += 0.8;
 			}
 			if (window.state.controls.thrust.isDown) {
-				this.sprite.body.thrust(500);
+				this.sprite.body.thrust(300);
 			}
+
+			var self = this;
+			_.forEach(window.state.processRegistry[Scrap.toString()], function(scrap) {
+				var distance = self.sprite.position.distance(scrap.sprite.position),
+					angle = self.sprite.position.angle(scrap.sprite.position);
+
+				// attraction zone
+				if (distance < 400 && distance > 160) {
+					scrap.sprite.body.velocity.x += Math.cos(angle) * ((240 - (distance - 160)) / -10);
+					scrap.sprite.body.velocity.y += Math.sin(angle) * ((240 - (distance - 160)) / -10);
+				}
+
+				if (distance < 180 && distance > 140) {
+					scrap.sprite.body.velocity.x = ((scrap.sprite.body.velocity.x * 26) + self.sprite.body.velocity.x) / 27;
+					scrap.sprite.body.velocity.y = ((scrap.sprite.body.velocity.y * 26) + self.sprite.body.velocity.y) / 27;
+				}
+
+				// too close -- repel
+				if (distance < 160) {
+					scrap.sprite.body.velocity.x += Math.cos(angle) * ((160 - distance) / 0.7);
+					scrap.sprite.body.velocity.y += Math.sin(angle) * ((160 - distance) / 0.7);
+				}
+
+			});
 
 		};
 
@@ -120,9 +144,6 @@ window.states.gameState = (function() {
 
 		Scrap.prototype.go = function() {
 
-			this.sprite.x += this.xspeed;
-			this.sprite.y += this.yspeed;
-			this.sprite.angle += this.addAngle;
 		}
 
 		return Scrap;

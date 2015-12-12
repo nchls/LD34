@@ -47,6 +47,15 @@ window.util = (function() {
 		return angle * ((Math.PI * 2) / 360);
 	};
 
+	var getDist = function(x1, y1, x2, y2) {
+		_.forEach([x1, y1, x2, y2], function(arg) {
+			if (isNaN(arg) || typeof arg !== 'number') {
+				console.warn('[getDist] Not a number: ', arg)
+				return 0;
+			}
+		})
+		return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+	};
 	var getDistX = function(angle) {
 		if (isNaN(angle) || typeof angle !== 'number') {
 			console.warn('[getDistX] Not a number: ' + angle);
@@ -126,6 +135,7 @@ window.util = (function() {
 		factory: factory,
 		rand: rand,
 		angleToRad: angleToRad,
+		getDist: getDist,
 		getDistX: getDistX,
 		getDistY: getDistY,
 		prototypes: prototypes
