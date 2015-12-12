@@ -1,10 +1,11 @@
 window.globals = {
-	screenWidth: 800,
-	screenHeight: 600,
+	screenWidth: document.documentElement.clientWidth,
+	screenHeight: document.documentElement.clientHeight,
 
 	assets: {
 		graphs: {
 			ship: 'assets/ship.png',
+			scrap: 'assets/scrap1.png'
 		},
 	},
 
@@ -19,6 +20,7 @@ window.globals = {
 	controls: {
 		left: 'LEFT',
 		right: 'RIGHT',
+		thrust: 'UP',
 		fire: 'CONTROL'
 	}
 };

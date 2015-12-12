@@ -25,6 +25,12 @@ window.util = (function() {
 	};
 
 	var rand = function(min, max, floating) {
+		_.forEach([min, max], function(arg) {
+			if (isNaN(arg) || typeof arg !== 'number') {
+				console.warn('[rand] Not a number: ', arg)
+				return 0;
+			}
+		});
 		var range = max - min;
 		var num = (Math.random() * range) + min;
 		if (!floating) {
@@ -34,14 +40,26 @@ window.util = (function() {
 	};
 
 	var angleToRad = function(angle) {
+		if (isNaN(angle) || typeof angle !== 'number') {
+			console.warn('[angleToRad] Not a number: ' + angle);
+			return 0;
+		}
 		return angle * ((Math.PI * 2) / 360);
 	};
 
 	var getDistX = function(angle) {
-		return Math.cos(angle);
+		if (isNaN(angle) || typeof angle !== 'number') {
+			console.warn('[getDistX] Not a number: ' + angle);
+			return 0;
+		}
+		return -Math.sin(angle);
 	};
 	var getDistY = function(angle) {
-		return -Math.sin(angle);
+		if (isNaN(angle) || typeof angle !== 'number') {
+			console.warn('[getDistY] Not a number: ' + angle);
+			return 0;
+		}
+		return Math.cos(angle);
 	};
 
 	var prototypes = (function() {
@@ -67,22 +85,38 @@ window.util = (function() {
 			return Process;
 		}());
 
-		var Obj = (function() {
-			extend(Obj, Process);
+		var SpaceObj = (function() {
+			extend(SpaceObj, Process);
 
-			function Obj() {}
+			function SpaceObj() {
+				this.xspeed = 0;
+				this.yspeed = 0;
+				this.turnspeed = 0;
+				this.testprop = true;
+			}
 
-			Obj.prototype.xadvance = function(angle, distance) {
+			SpaceObj.prototype.tick = function() {
+				if (this.sprite) {
+					this.sprite.x += this.xspeed;
+					this.sprite.y += this.yspeed;
+					this.sprite.angle += this.turnspeed;
+					if (this.addAngle) {
+						this.sprite.angle += this.addAngle;
+					}
+				}
+			}
+
+			SpaceObj.prototype.xadvance = function(angle, distance) {
 				this.sprite.x += getDistX(angleToRad(angle)) * distance;
 				this.sprite.y += getDistY(angleToRad(angle)) * distance;
 			}
 
-			return Obj;
+			return SpaceObj;
 		}());
 
 		return {
 			Process: Process,
-			Obj: Obj
+			SpaceObj: SpaceObj
 		};
 
 	}());
