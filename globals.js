@@ -8,15 +8,16 @@ window.globals = {
 			scrap: 'assets/scrap1.png',
 			starfield: 'assets/starfield.png',
 			engine: 'assets/engine.png',
-			gun: 'assets/gun.png'
+			gun: 'assets/gun.png',
+			beam: 'assets/beam.png'
 		},
 	},
 
 	fonts: {
 		main: {
-			font: '16px Consolas, monospace',
+			font: '20px Consolas, monospace',
 			fill: '#fff',
-			align: 'left'
+			align: 'center'
 		}
 	},
 
@@ -24,8 +25,11 @@ window.globals = {
 		left: 'LEFT',
 		right: 'RIGHT',
 		thrust: 'UP',
-		fire: 'CONTROL'
-	}
+		reverse: 'DOWN',
+		charge: 'CONTROL'
+	},
+
+	collectMode: 'gravity'
 };
 
 window.state = {

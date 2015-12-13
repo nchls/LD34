@@ -46,6 +46,10 @@ window.util = (function() {
 		}
 		return angle * ((Math.PI * 2) / 360);
 	};
+	var getAngleDelta = function(angle1, angle2) {
+		var abs = Math.abs(angle1 - angle2);
+		return _.min([(2*Math.PI) - abs, abs]);
+	}
 
 	var getDist = function(x1, y1, x2, y2) {
 		_.forEach([x1, y1, x2, y2], function(arg) {
@@ -135,6 +139,7 @@ window.util = (function() {
 		factory: factory,
 		rand: rand,
 		angleToRad: angleToRad,
+		getAngleDelta: getAngleDelta,
 		getDist: getDist,
 		getDistX: getDistX,
 		getDistY: getDistY,
