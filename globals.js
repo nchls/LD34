@@ -4,8 +4,15 @@ window.globals = {
 
 	assets: {
 		graphs: {
-			ship: 'assets/ship.png',
+			shipRed: 'assets/ship-red.png',
+			shipGreen: 'assets/ship-green.png',
+			shipBlue: 'assets/ship-blue.png',
+			shipYellow: 'assets/ship-yellow.png',
+			shipBlack: 'assets/ship-black.png',
+			shipWhite: 'assets/ship-white.png',
+			engineThrust: 'assets/enginesFiring.png',
 			scrap: 'assets/scrap1.png',
+			particle: 'assets/particle.png',
 			starfield: 'assets/starfield.png',
 			engine: 'assets/engine.png',
 			gun: 'assets/gun.png',
@@ -16,6 +23,16 @@ window.globals = {
 	fonts: {
 		main: {
 			font: '20px Consolas, monospace',
+			fill: '#fff',
+			align: 'center'
+		},
+		console: {
+			font: '20px Consolas, monospace',
+			fill: '#fff',
+			align: 'left'
+		},
+		announcement: {
+			font: '40px Consolas, monospace',
 			fill: '#fff',
 			align: 'center'
 		}
