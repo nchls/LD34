@@ -1,6 +1,6 @@
 window.globals = {
-	screenWidth: document.documentElement.clientWidth,
-	screenHeight: document.documentElement.clientHeight,
+	screenWidth: document.getElementById('aplomb-game').clientWidth,
+	screenHeight: document.getElementById('aplomb-game').clientHeight,
 
 	assets: {
 		graphs: {

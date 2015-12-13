@@ -47,8 +47,26 @@ window.util = (function() {
 		return angle * ((Math.PI * 2) / 360);
 	};
 	var getAngleDelta = function(angle1, angle2) {
-		var abs = Math.abs(angle1 - angle2);
-		return _.min([(2*Math.PI) - abs, abs]);
+		_.forEach([angle1, angle2], function(ang) {
+			ang = normalizeRadians(ang);
+		});
+		var easyCase = angle2 - angle1;
+		if (Math.abs(easyCase) < Math.PI) {
+			return easyCase;
+		}
+		if (angle1 < angle2) {
+			return -((angle1 + (Math.PI*2)) - angle2);
+		}
+		return (angle2 + (Math.PI*2)) - angle1;
+	};
+	var normalizeRadians = function(angle) {
+		while (angle < -Math.PI) {
+			angle += 2*Math.PI;
+		}
+		while (angle > Math.PI) {
+			angle -= 2*Math.PI;
+		}
+		return angle;
 	}
 
 	var getDist = function(x1, y1, x2, y2) {
@@ -140,6 +158,7 @@ window.util = (function() {
 		rand: rand,
 		angleToRad: angleToRad,
 		getAngleDelta: getAngleDelta,
+		normalizeRadians: normalizeRadians,
 		getDist: getDist,
 		getDistX: getDistX,
 		getDistY: getDistY,
