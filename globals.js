@@ -23,8 +23,6 @@ window.globals = {
 			health: 'assets/health.png',
 			particle: 'assets/particle.png',
 			starfield: 'assets/starfield.png',
-			engine: 'assets/engine.png',
-			gun: 'assets/gun.png',
 			beam: 'assets/beam.png'
 		}
 	},
