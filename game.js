@@ -10,6 +10,7 @@ window.states.gameState = (function() {
 		_.forEach(globals.assets.graphs, function(src, name) {
 			game.load.image(name, src);
 		});
+		game.load.spritesheet('explosion', 'assets/explosion.png', 64, 64, 16);
 		game.time.advancedTiming = true;
 	};
 
@@ -20,6 +21,12 @@ window.states.gameState = (function() {
 		populate();
 	};
 
+	var viewport = {
+		top: null,
+		right: null,
+		bottom: null,
+		left: null
+	};
 	gameState.prototype.update = function() {
 		_.forEach(window.state.processRegistry, function(processes, key) {
 			_.forEach(processes, function(process) {
@@ -45,6 +52,10 @@ window.states.gameState = (function() {
 			});
 			populate();
 		}
+		viewport.left = game.world.camera.x;
+		viewport.right = game.world.camera.x + globals.screenWidth;
+		viewport.top = game.world.camera.y;
+		viewport.bottom = game.world.camera.y + globals.screenHeight;
 	};
 
 	gameState.prototype.render = function() {
@@ -60,8 +71,8 @@ window.states.gameState = (function() {
 	};
 
 	var initWorld = function() {
-		game.world.resize(5000, 5000);
-		game.add.tileSprite(0, 0, 5000, 5000, 'starfield');
+		game.world.resize(6000, 6000);
+		game.add.tileSprite(0, 0, 6000, 6000, 'starfield');
 	};
 
 	var initPhysics = function() {
@@ -77,7 +88,7 @@ window.states.gameState = (function() {
 		util.factory(Ship, ['ai', 2, util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
 		util.factory(Ship, ['ai', 3, util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
 		util.factory(Ship, ['ai', 4, util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
-		for (var i=0; i < 100; i++) {
+		for (var i=0; i < 80; i++) {
 			util.factory(Scrap, [i]);
 		}
 	};
@@ -110,6 +121,8 @@ window.states.gameState = (function() {
 	};
 
 	var Console = (function() {
+		util.extend(Console, util.prototypes.Process);
+
 		function Console() {
 			this.msgs = [];
 			this.texts = [];
@@ -136,7 +149,6 @@ window.states.gameState = (function() {
 			this.announcement = game.add.text(globals.screenWidth / 2, (globals.screenHeight / 2) + 100, msg, globals.fonts.announcement);
 			this.announcement.anchor.set(0.5, 0.5);
 			this.announcement.fixedToCamera = true;
-			window.annc = this.announcement;
 		};
 
 		Console.prototype.report = function(msg) {
@@ -173,20 +185,22 @@ window.states.gameState = (function() {
 
 			this.inputs = {};
 
-			this.life = 10;
+			this.life = 100;
 			this.baseAngularDamping = 0.99999;
+
+			var shipColors = {
+				0: 'Red',
+				1: 'Blue',
+				2: 'Green',
+				3: 'Yellow',
+				4: 'White'
+			};
+
 			if (this.controller === 'player') {
 				window.playerShip = this;
 				this.sprite = game.add.sprite(this.x, this.y, 'shipBlack');
 				this.color = 'Black';
 			} else {
-				var shipColors = {
-					0: 'Red',
-					1: 'Blue',
-					2: 'Green',
-					3: 'Yellow',
-					4: 'White'
-				};
 				var graph = 'ship' + shipColors[this.i];
 				this.color = shipColors[this.i];
 				this.sprite = game.add.sprite(this.x, this.y, graph);
@@ -216,6 +230,11 @@ window.states.gameState = (function() {
 				this.scrapTarget = null;
 				this.shipTarget = null;
 				this.lastDecisions = null;
+
+				this.indicator = game.add.image(0, 0, 'indicator' + shipColors[this.i]);
+				this.indicator.anchor.set(0.5, 1);
+				this.indicator.fixedToCamera = true;
+				this.indicator.kill();
 			}
 
 			if (globals.collectMode === 'lock') {
@@ -243,6 +262,8 @@ window.states.gameState = (function() {
 					if (body1 !== null) {
 						var force = util.getDist(body1.velocity.x, body1.velocity.y, body2.velocity[0], body2.velocity[1]);
 						self.life -= _.round(force / 100);
+						util.factory(Explosion, [body2.parent.sprite.position.x, body2.parent.sprite.position.y, force]);
+						window.body2 = body2;
 					}
 					//self.sprite.body.angularVelocity += util.rand(-3, 3, true);
 					//self.sprite.body.angularDamping = 0.9;
@@ -578,6 +599,15 @@ window.states.gameState = (function() {
 			}
 
 			if (this.life < 0) {
+				var self = this;
+				_.times(7, function() {
+					util.factory(Explosion, [self.sprite.x + util.rand(-10,10), self.sprite.y + util.rand(-10,10), 1000]);
+				});
+				_.forEach(window.state.processRegistry[Scrap.toString()], function(scrap) {
+					if (scrap.magnetizedToPlayer === self) {
+						scrap.magnetizedToPlayer = false;
+					}
+				});
 				this.cleanup();
 				this.die();
 				reportDeath(this);
@@ -588,12 +618,70 @@ window.states.gameState = (function() {
 			this.lifeBar.y = this.sprite.y + 50 + (this.sprite.body.velocity.y / 60);
 			this.lifeBar.text = this.life;
 
+			if (this.controller === 'ai') {
+				var indx;
+				var indy;
+				var indang = 0;
+				if (this.sprite.x > viewport.left && this.sprite.x < viewport.right) {
+					if (this.sprite.y < viewport.top) {
+						indx = this.sprite.x - viewport.left;
+						indy = 30;
+					} else if (this.sprite.y > viewport.bottom) {
+						indx = this.sprite.x - viewport.left;
+						indy = globals.screenHeight - 30;
+						indang = 180;
+					}
+				}
+				if (this.sprite.y > viewport.top && this.sprite.y < viewport.bottom) {
+					if (this.sprite.x < viewport.left) {
+						indx = 30
+						indy = this.sprite.y - viewport.top;
+						indang = 270;
+					} else if (this.sprite.x > viewport.right) {
+						indx = globals.screenWidth - 30;
+						indy = this.sprite.y - viewport.top;
+						indang = 90;
+					}
+				}
+				if (this.sprite.x < viewport.left) {
+					if (this.sprite.y < viewport.top) {
+						indx = 30;
+						indy = 30;
+						indang = 315;
+					} else if (this.sprite.y > viewport.bottom) {
+						indx = 30;
+						indy = globals.screenHeight - 30;
+						indang = 225;
+					}
+				}
+				if (this.sprite.x > viewport.right) {
+					if (this.sprite.y < viewport.top) {
+						indx = globals.screenWidth - 30;
+						indy = 30;
+						indang = 45;
+					} else if (this.sprite.y > viewport.bottom) {
+						indx = globals.screenWidth - 30;
+						indy = globals.screenHeight - 30;
+						indang = 135;
+					}
+				}
+				if (indx && indy) {
+					this.indicator.reset(indx, indy);
+					this.indicator.angle = indang;
+					this.indicator.alpha = 0.7;
+					this.indicator.fixedToCamera = true;
+				} else {
+					this.indicator.kill();
+				}
+			}
+
 		};
 
 		Ship.prototype.cleanup = function() {
 			this.beamImage.destroy();
 			this.thrustImage.destroy();
 			this.lifeBar.destroy();
+			this.indicator && this.indicator.destroy();
 		}
 
 		return Ship;
@@ -636,6 +724,42 @@ window.states.gameState = (function() {
 		}
 
 		return Scrap;
+	}());
+
+	var Explosion = (function() {
+		util.extend(Explosion, util.prototypes.Process);
+
+		function Explosion(x, y, force) {
+			this.x = x;
+			this.y = y;
+			this.sprite = game.add.sprite(this.x, this.y, 'explosion');
+			this.sprite.angle = util.rand(-180, 180);
+			this.sprite.scale.x = 1 + (force / 2000);
+			this.sprite.scale.y = this.sprite.scale.x;
+			this.sprite.anchor.set(0.5, 0.5);
+			window.exp = this;
+
+			this.animation = this.sprite.animations.add('explode');
+			this.animation.enableUpdate = true;
+			this.sprite.animations.play('explode', 30);
+
+			var self = this;
+			this.sprite.animations.currentAnim.onComplete.add(function() {
+				self.die();
+			});
+		}
+
+		Explosion.prototype.go = function() {
+			this.sprite.scale.x += 0.06;
+			this.sprite.scale.y += 0.06;
+			this.sprite.alpha -= 0.03;
+		};
+
+		Explosion.prototype.cleanup = function() {
+
+		};
+
+		return Explosion;
 	}());
 
 	return gameState;
