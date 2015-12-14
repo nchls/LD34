@@ -11,7 +11,6 @@ window.states.gameState = (function() {
 			game.load.image(name, src);
 		});
 		game.load.spritesheet('explosion', 'assets/explosion.png', 64, 64, 16);
-		game.time.advancedTiming = true;
 	};
 
 	gameState.prototype.create = function() {
@@ -19,6 +18,9 @@ window.states.gameState = (function() {
 		initWorld();
 		initPhysics();
 		populate();
+		if (window.localStorage && !window.localStorage.getItem('tutorialShown')) {
+			tutorial();
+		}
 	};
 
 	var viewport = {
@@ -41,7 +43,6 @@ window.states.gameState = (function() {
 				_.forEach(processes, function(process) {
 					if (process !== undefined) {
 						if (process.cleanup) {
-							console.log('calling cleanup', process.cleanup);
 							process.cleanup();
 						}
 						if (process.die) {
@@ -88,6 +89,9 @@ window.states.gameState = (function() {
 		util.factory(Ship, ['ai', 2, util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
 		util.factory(Ship, ['ai', 3, util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
 		util.factory(Ship, ['ai', 4, util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
+		for (var i=0; i < 6; i++) {
+			util.factory(Health, [util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
+		}
 		for (var i=0; i < 80; i++) {
 			util.factory(Scrap, [i]);
 		}
@@ -118,6 +122,26 @@ window.states.gameState = (function() {
 				isGameResetable = true;
 			}, 3000);
 		}
+	};
+
+	var tutorial = function() {
+		var style = _.cloneDeep(globals.fonts.announcement);
+		style.wordWrap = true;
+		style.wordWrapWidth = globals.screenWidth - 200;
+
+		var text = game.add.text(globals.screenWidth / 2, 200, 'Use the arrow keys to turn, and up to thrust.', style);
+		text.fixedToCamera = true;
+		text.anchor.set(0.5, 0);
+		setTimeout(function() {
+			text.setText('Fly near scrap to collect it. You\'ll need it for both ammo and armor.');
+			setTimeout(function() {
+				text.setText('Charge your weapon by holding CTRL. Release to fire.');
+				setTimeout(function() {
+					text.destroy();
+				}, 7000);
+			}, 7000);
+		}, 7000);
+		localStorage.setItem('tutorialShown', true);
 	};
 
 	var Console = (function() {
@@ -197,7 +221,6 @@ window.states.gameState = (function() {
 			};
 
 			if (this.controller === 'player') {
-				window.playerShip = this;
 				this.sprite = game.add.sprite(this.x, this.y, 'shipBlack');
 				this.color = 'Black';
 			} else {
@@ -221,7 +244,7 @@ window.states.gameState = (function() {
 			this.charge = 0;
 
 			if (this.controller === 'ai') {
-				this.minScrap = util.rand(1, 3);
+				this.minScrap = util.rand(2, 10);
 				this.scrapCount = 0;
 				this.attackDist = util.rand(500, 1500);
 				this.chargeTime = util.rand(50, 100);
@@ -237,33 +260,14 @@ window.states.gameState = (function() {
 				this.indicator.kill();
 			}
 
-			if (globals.collectMode === 'lock') {
-				this.sprite.body.onBeginContact.add(function(body1, body2, shape1, shape2, equation) {
-					var shipSprite = this.sprite;
-					var shipBody = this.sprite.body;
-					if (body1 !== null && body2 !== null) {
-						body2.isLocked = true;
-						body2.angularVelocity = 0;
-						body2.velocity.x = 0;
-						body2.fixedY = 0;
-						body2.setZeroForce();
-						window.body2 = body2;
-						var distance = shipSprite.position.distance({x: body2.position[0], y: body2.position[1]});
-						var angle = shipSprite.position.angle({x: body2.position[0], y: body2.position[1]});
-						console.log(angle, distance);
-						var constraint = game.physics.p2.createLockConstraint(shipBody, body2, [100, 0], 0);
-					}
-				}, this);
-			}
-
-			window.meShip = this;
 			if (globals.collectMode === 'gravity') {
 				this.sprite.body.onBeginContact.add(function(body1, body2, shape1, shape2, equation) {
 					if (body1 !== null) {
 						var force = util.getDist(body1.velocity.x, body1.velocity.y, body2.velocity[0], body2.velocity[1]);
 						self.life -= _.round(force / 100);
-						util.factory(Explosion, [body2.parent.sprite.position.x, body2.parent.sprite.position.y, force]);
-						window.body2 = body2;
+						if (body2.parent.sprite) {
+							util.factory(Explosion, [body2.parent.sprite.position.x, body2.parent.sprite.position.y, force]);
+						}
 					}
 					//self.sprite.body.angularVelocity += util.rand(-3, 3, true);
 					//self.sprite.body.angularDamping = 0.9;
@@ -474,7 +478,6 @@ window.states.gameState = (function() {
 
 				if (decisions.toString() !== this.lastDecisions) {
 					this.lastDecisions = decisions.toString();
-//					console.log(decisions);
 				}
 
 			}
@@ -596,6 +599,25 @@ window.states.gameState = (function() {
 					}
 				});
 
+				_.forEach(window.state.processRegistry[Health.toString()], function(health) {
+
+					if (!health) {
+						return;
+					}
+
+					var distance = self.sprite.position.distance(health.sprite.position);
+					if (distance < 60) {
+						self.life = _.min([self.life + 50, 100]);
+						health.die();
+						util.factory(Health, [util.rand(600, game.world.width - 600), util.rand(600, game.world.height - 600)]);
+					} else if (distance < 400) {
+						var angleToHealth = self.sprite.position.angle(health.sprite.position);
+						health.sprite.body.velocity.x += Math.cos(angleToHealth) * ((400 - distance) / -5);
+						health.sprite.body.velocity.y += Math.sin(angleToHealth) * ((400 - distance) / -5);
+					}
+
+				});
+
 			}
 
 			if (this.life < 0) {
@@ -696,7 +718,13 @@ window.states.gameState = (function() {
 			this.y = util.rand(0, game.world.height);
 			this.isMagnetized = true;
 			this.magnetizedToPlayer = false;
-			this.sprite = game.add.sprite(this.x, this.y, 'scrap');
+
+			var graph = game.rnd.pick(['scrap1', 'scrap2', 'scrap3']);
+			if (util.rand(0, 7) === 1) {
+				graph = 'scrapExplosive';
+				this.isExplosive = true;
+			}
+			this.sprite = game.add.sprite(this.x, this.y, graph);
 			this.sprite.anchor.set(0.5, 0.5);
 
 			game.physics.p2.enable(this.sprite, false);
@@ -708,7 +736,33 @@ window.states.gameState = (function() {
 			this.sprite.body.angularDamping = 0;
 			this.sprite.body.damping = 0;
 
-			this.sprite.body.lock = this.lock;
+			var self = this;
+			if (this.isExplosive) {
+				this.sprite.body.onBeginContact.add(function(body1, body2, shape1, shape2, equation) {
+					if (body1 !== null) {
+						var force = util.getDist(body1.velocity.x, body1.velocity.y, body2.velocity[0], body2.velocity[1]);
+						if (force > 1000) {
+							util.factory(Explosion, [self.sprite.position.x, self.sprite.position.y, 5000]);
+							_.forEach([Scrap.toString(), Ship.toString(), Health.toString()], function(klass) {
+								_.forEach(window.state.processRegistry[klass], function(obj) {
+									var distance = self.sprite.position.distance(obj.sprite.position);
+									if (distance < 400) {
+										var angleToObj = self.sprite.position.angle(obj.sprite.position);
+										obj.sprite.body.velocity.x += Math.cos(angleToObj) * ((400 - distance) / 0.4);
+										obj.sprite.body.velocity.y += Math.sin(angleToObj) * ((400 - distance) / 0.4);
+										if (obj.life) {
+											obj.life -= _.round((400 - distance) / 5);
+										}
+									}
+								});
+							});
+							self.die();
+						}
+					}
+					//self.sprite.body.angularVelocity += util.rand(-3, 3, true);
+					//self.sprite.body.angularDamping = 0.9;
+				});
+			}
 		}
 
 		Scrap.prototype.go = function() {
@@ -724,6 +778,32 @@ window.states.gameState = (function() {
 		}
 
 		return Scrap;
+	}());
+
+	var Health = (function() {
+		util.extend(Health, util.prototypes.Process);
+
+		function Health(x, y) {
+			this.x = x;
+			this.y = y;
+			this.sprite = game.add.sprite(this.x, this.y, 'health');
+			this.sprite.anchor.set(0.5, 0.5);
+
+			game.physics.p2.enable(this.sprite, false);
+			this.sprite.body.angle = util.rand(-180, 180, true);
+			this.sprite.body.thrust(util.rand(0, 3000, true));
+			this.sprite.body.angle = util.rand(-180, 180, true);
+			this.sprite.body.angularVelocity = util.rand(-2, 2, true);
+			this.sprite.body.setCircle(25);
+			this.sprite.body.angularDamping = 0;
+			this.sprite.body.damping = 0;
+		}
+
+		Health.prototype.go = function() {
+
+		}
+
+		return Health;
 	}());
 
 	var Explosion = (function() {

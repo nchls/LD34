@@ -16,13 +16,17 @@ window.globals = {
 			indicatorGreen: 'assets/indicator-green.png',
 			indicatorWhite: 'assets/indicator-white.png',
 			indicatorYellow: 'assets/indicator-yellow.png',
-			scrap: 'assets/scrap1.png',
+			scrap1: 'assets/scrap1.png',
+			scrap2: 'assets/scrap2.png',
+			scrap3: 'assets/scrap3.png',
+			scrapExplosive: 'assets/explosive.png',
+			health: 'assets/health.png',
 			particle: 'assets/particle.png',
 			starfield: 'assets/starfield.png',
 			engine: 'assets/engine.png',
 			gun: 'assets/gun.png',
 			beam: 'assets/beam.png'
-		},
+		}
 	},
 
 	fonts: {
