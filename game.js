@@ -60,7 +60,7 @@ window.states.gameState = (function() {
 	};
 
 	gameState.prototype.render = function() {
-		game.debug.text(game.time.fps || '-', 2, 14, '#fff');
+
 	};
 
 	var csl;
