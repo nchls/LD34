@@ -129,7 +129,7 @@ window.states.gameState = (function() {
 		style.wordWrap = true;
 		style.wordWrapWidth = globals.screenWidth - 200;
 
-		var text = game.add.text(globals.screenWidth / 2, screenHeight / 4, 'Use the arrow keys to turn, and up to thrust.', style);
+		var text = game.add.text(globals.screenWidth / 2, globals.screenHeight / 4, 'Use the arrow keys to turn, and up to thrust.', style);
 		text.fixedToCamera = true;
 		text.anchor.set(0.5, 0);
 		setTimeout(function() {
