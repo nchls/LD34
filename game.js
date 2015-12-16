@@ -129,13 +129,13 @@ window.states.gameState = (function() {
 		style.wordWrap = true;
 		style.wordWrapWidth = globals.screenWidth - 200;
 
-		var text = game.add.text(globals.screenWidth / 2, 200, 'Use the arrow keys to turn, and up to thrust.', style);
+		var text = game.add.text(globals.screenWidth / 2, screenHeight / 4, 'Use the arrow keys to turn, and up to thrust.', style);
 		text.fixedToCamera = true;
 		text.anchor.set(0.5, 0);
 		setTimeout(function() {
 			text.setText('Fly near scrap to collect it. You\'ll need it for both ammo and armor.');
 			setTimeout(function() {
-				text.setText('Charge your weapon by holding CTRL. Release to fire.');
+				text.setText('Charge your weapon by holding Z. Release to fire.');
 				setTimeout(function() {
 					text.destroy();
 				}, 7000);

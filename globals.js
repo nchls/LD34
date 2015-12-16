@@ -50,7 +50,7 @@ window.globals = {
 		right: 'RIGHT',
 		thrust: 'UP',
 		reverse: 'DOWN',
-		charge: 'CONTROL'
+		charge: 'Z'
 	},
 
 	collectMode: 'gravity'
